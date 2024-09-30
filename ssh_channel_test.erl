@@ -38,6 +38,7 @@ create_and_use_channels(Connection) ->
 
         ok = send_hello_msg(Connection, Channel1),
         receive_data(Channel1),
+        timer:sleep(1),
         io:format("Closing Channel(~p)~n", [Channel1]),
         ok = ssh_connection:close(Connection, Channel1),
 
@@ -45,9 +46,7 @@ create_and_use_channels(Connection) ->
 
         ok = send_hello_msg(Connection, Channel2),
         receive_data(Channel2),
-
         timer:sleep(3000),
-
         io:format("Closing Channel(~p)~n", [Channel2]),
         ok = ssh_connection:close(Connection, Channel2)
     catch
@@ -97,9 +96,9 @@ receive_data(Channel) ->
         {ssh_cm, _, {data, Channel, _, Data}} ->
             % Truncate the binary Data to 50 bytes and convert to list for printing
             TruncatedData = binary_to_list(
-                binary:part(Data, 0, min(50, byte_size(Data)))
+                binary:part(Data, 0, min(80, byte_size(Data)))
             ),
-            io:format("Data on Channel ~p: ~p~n", [Channel, TruncatedData]);
+            io:format("Received data on Channel ~p: ~p~n", [Channel, TruncatedData]);
         {ssh_cm, _, {closed, Channel}} ->
             io:format("Channel ~p closed~n", [Channel])
     after 10000 ->
