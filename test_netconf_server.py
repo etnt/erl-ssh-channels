@@ -24,16 +24,16 @@ class TestNetconfServer(unittest.TestCase):
             server_hello += chunk
 
         # Verify the server's hello message
-        self.assertIn("&lt;hello xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\"&gt;", server_hello)
-        self.assertIn("&lt;capability&gt;urn:ietf:params:netconf:base:1.0&lt;/capability&gt;", server_hello)
+        self.assertIn('<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">', server_hello)
+        self.assertIn('<capability>urn:ietf:params:netconf:base:1.0</capability>', server_hello)
 
         # Send a client hello message
         client_hello = """
-        &lt;hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"&gt;
-            &lt;capabilities&gt;
-                &lt;capability&gt;urn:ietf:params:netconf:base:1.0&lt;/capability&gt;
-            &lt;/capabilities&gt;
-        &lt;/hello&gt;]]>]]>
+        <hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+            <capabilities>
+                <capability>urn:ietf:params:netconf:base:1.0</capability>
+            </capabilities>
+        </hello>]]>]]>
         """
         process.stdin.write(client_hello)
         process.stdin.flush()
@@ -48,7 +48,7 @@ class TestNetconfServer(unittest.TestCase):
 
         # Verify the server's response
         self.assertIn("Echoing received message:", server_response)
-        self.assertIn("&lt;hello xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\"&gt;", server_response)
+        self.assertIn('<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">', server_response)
 
         # Clean up
         process.terminate()
