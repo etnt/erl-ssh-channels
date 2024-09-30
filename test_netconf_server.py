@@ -3,6 +3,8 @@
 import unittest
 import subprocess
 import xml.etree.ElementTree as ET
+import os
+import glob
 import time
 
 class TestNetconfServer(unittest.TestCase):
@@ -16,48 +18,54 @@ class TestNetconfServer(unittest.TestCase):
             text=True
         )
 
-        try:
-            # Read the server's hello message with a timeout
-            server_hello = self.read_with_timeout(process.stdout, "]]>]]>", 10)
-
-            # Verify the server's hello message
-            self.assertIn('<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">', server_hello)
-            self.assertIn('<capability>urn:ietf:params:netconf:base:1.0</capability>', server_hello)
-
-            # Send a client hello message
-            client_hello = """
-            <hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
-                <capabilities>
-                    <capability>urn:ietf:params:netconf:base:1.0</capability>
-                </capabilities>
-            </hello>]]>]]>
-            """
-            process.stdin.write(client_hello)
-            process.stdin.flush()
-
-            # Wait for the server to terminate
-            process.wait(timeout=10)
-
-
-        finally:
-            # Clean up (in case the server didn't terminate on its own)
-            if process.poll() is None:
-                process.terminate()
-                process.wait(timeout=5)
-
-    def read_with_timeout(self, stream, delimiter, timeout):
-        start_time = time.time()
-        result = ""
-        while True:
-            if time.time() - start_time > timeout:
-                raise TimeoutError("Timeout while reading from process")
-            chunk = stream.read(1)
+        # Read the server's hello message
+        server_hello = ""
+        while "]]>]]>" not in server_hello:
+            chunk = process.stdout.read(1)
             if not chunk:
                 break
-            result += chunk
-            if delimiter in result:
-                break
-        return result
+            server_hello += chunk
+
+        # Verify the server's hello message
+        self.assertIn("<hello xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">", server_hello)
+        self.assertIn("<capability>urn:ietf:params:netconf:base:1.0</capability>", server_hello)
+
+        # Send a client hello message
+        client_hello = """
+        <hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+            <capabilities>
+                <capability>urn:ietf:params:netconf:base:1.0</capability>
+            </capabilities>
+        </hello>]]>]]>
+        """
+        process.stdin.write(client_hello)
+        process.stdin.flush()
+
+        time.sleep(2)
+
+        # Clean up
+        process.terminate()
+        process.wait(timeout=5)
+
+        time.sleep(2)
+
+        # Check for log file
+        log_files = glob.glob("/tmp/netconf_server_*.log")
+        self.assertTrue(log_files, "No log file found")
+        
+        # Get the most recent log file
+        latest_log_file = max(log_files, key=os.path.getmtime)
+
+        # Check log file contents
+        with open(latest_log_file, 'r') as log_file:
+            log_content = log_file.read()
+            self.assertIn("Netconf server started", log_content)
+            self.assertIn("Sent hello message", log_content)
+            self.assertIn("Received valid hello message", log_content)
+            self.assertIn("Hello message exchange completed", log_content)
+
+        # Clean up log file
+        os.remove(log_files[0])
 
 if __name__ == '__main__':
     unittest.main()
