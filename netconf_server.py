@@ -42,6 +42,7 @@ def main():
     while True:
         chunk = sys.stdin.read(1)
         if not chunk:
+            logging.error("Nothing to read")
             break
         buffer += chunk
         if "]]>]]>" in buffer:
@@ -54,6 +55,7 @@ def main():
     while True:
         chunk = sys.stdin.read(1)
         if not chunk:
+            logging.info("No more msgs to read")
             break
         buffer += chunk
         if "]]>]]>" in buffer:
