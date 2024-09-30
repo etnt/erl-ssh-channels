@@ -35,17 +35,21 @@ class TestNetconfServer(unittest.TestCase):
             process.stdin.write(client_hello)
             process.stdin.flush()
 
-            # Read the server's response with a timeout
-            server_response = self.read_with_timeout(process.stdout, "]]>]]>", 10)
+            # Wait for the server to terminate
+            process.wait(timeout=10)
 
-            # Verify the server's response
-            self.assertIn("Echoing received message:", server_response)
-            self.assertIn('<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">', server_response)
+            # Read the server's stderr output
+            server_stderr = process.stderr.read()
+
+            # Verify the server's output
+            self.assertIn("Received valid hello message:", server_stderr)
+            self.assertIn("Hello message exchange completed", server_stderr)
 
         finally:
-            # Clean up
-            process.terminate()
-            process.wait(timeout=5)
+            # Clean up (in case the server didn't terminate on its own)
+            if process.poll() is None:
+                process.terminate()
+                process.wait(timeout=5)
 
     def read_with_timeout(self, stream, delimiter, timeout):
         start_time = time.time()
