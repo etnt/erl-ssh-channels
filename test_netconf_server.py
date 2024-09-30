@@ -36,7 +36,7 @@ class TestNetconfServer(unittest.TestCase):
             while "]]>]]>" not in server_hello:
                 chunk = process.stdout.read(1)
                 if not chunk:
-                    break
+                    self.fail("Server closed connection before sending complete hello message")
                 server_hello += chunk
 
             # Verify the server's hello message
@@ -84,6 +84,7 @@ class TestNetconfServer(unittest.TestCase):
             self.assertIn("Sent hello message", log_content)
             self.assertIn("Received valid hello message", log_content)
             self.assertIn("Hello message exchange completed", log_content)
+            self.assertIn("Netconf server shutting down", log_content)
 
 if __name__ == '__main__':
     unittest.main()

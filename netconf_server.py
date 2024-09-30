@@ -6,10 +6,13 @@ import logging
 import os
 from datetime import datetime
 import argparse
+import uuid
 
 def setup_logging(log_dir):
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"netconf_server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+    unique_id = uuid.uuid4().hex[:8]  # Generate a unique 8-character identifier
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    log_file = os.path.join(log_dir, f"netconf_server_{timestamp}_{unique_id}.log")
     logging.basicConfig(filename=log_file, level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s')
     return log_file
