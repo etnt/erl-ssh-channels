@@ -5,11 +5,14 @@ import xml.etree.ElementTree as ET
 import logging
 import os
 from datetime import datetime
+import argparse
 
-# Set up logging
-log_file = f"/tmp/netconf_server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-logging.basicConfig(filename=log_file, level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+def setup_logging(log_dir):
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, f"netconf_server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+    logging.basicConfig(filename=log_file, level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s')
+    return log_file
 
 def create_hello_message():
     hello = ET.Element("hello", xmlns="urn:ietf:params:xml:ns:netconf:base:1.0")
@@ -28,8 +31,9 @@ def parse_hello_message(message):
         logging.error("Failed to parse hello message")
     return False
 
-def main():
-    logging.info("Netconf server started")
+def main(log_dir):
+    log_file = setup_logging(log_dir)
+    logging.info(f"Netconf server started. Logging to {log_file}")
     
     # Send hello message
     hello_message = create_hello_message()
@@ -42,7 +46,7 @@ def main():
     while True:
         chunk = sys.stdin.read(1)
         if not chunk:
-            logging.error("Nothing to read")
+            logging.error("Client disconnected")
             break
         buffer += chunk
         if "]]>]]>" in buffer:
@@ -51,23 +55,11 @@ def main():
                 logging.info("Hello message exchange completed")
                 break
 
-    # Continue processing other messages
-    while True:
-        chunk = sys.stdin.read(1)
-        if not chunk:
-            logging.info("No more msgs to read")
-            break
-        buffer += chunk
-        if "]]>]]>" in buffer:
-            message, _, buffer = buffer.partition("]]>]]>")
-            logging.info(f"Received message: {message}")
-            # Here you would typically process the message and send a response
-            # For this example, we'll just echo the message back
-            sys.stdout.write(f"Echoing received message: {message}]]>]]>")
-            sys.stdout.flush()
-            logging.info("Echoed message back to client")
-
     logging.info("Netconf server shutting down")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Netconf Server")
+    parser.add_argument("--log-dir", default="/tmp", help="Directory to store log files")
+    args = parser.parse_args()
+    
+    main(args.log_dir)
