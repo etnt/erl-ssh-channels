@@ -2,6 +2,7 @@
 
 import sys
 import xml.etree.ElementTree as ET
+import select
 
 def create_hello_message():
     hello = ET.Element("hello", xmlns="urn:ietf:params:xml:ns:netconf:base:1.0")
@@ -28,7 +29,12 @@ def main():
 
     # Receive and parse client's hello message
     buffer = ""
+    timeout = 5  # 5 seconds timeout
     while True:
+        ready, _, _ = select.select([sys.stdin], [], [], timeout)
+        if not ready:
+            sys.stderr.write("Timeout waiting for client hello\n")
+            return
         chunk = sys.stdin.read(1)
         if not chunk:
             break
@@ -41,6 +47,10 @@ def main():
 
     # Continue processing other messages
     while True:
+        ready, _, _ = select.select([sys.stdin], [], [], timeout)
+        if not ready:
+            sys.stderr.write("Timeout waiting for client message\n")
+            return
         chunk = sys.stdin.read(1)
         if not chunk:
             break
