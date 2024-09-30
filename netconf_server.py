@@ -45,23 +45,6 @@ def main():
                 sys.stderr.write("Hello message exchange completed\n")
                 break
 
-    # Continue processing other messages
-    while True:
-        ready, _, _ = select.select([sys.stdin], [], [], timeout)
-        if not ready:
-            sys.stderr.write("Timeout waiting for client message\n")
-            return
-        chunk = sys.stdin.read(1)
-        if not chunk:
-            break
-        buffer += chunk
-        if "]]>]]>" in buffer:
-            message, _, buffer = buffer.partition("]]>]]>")
-            sys.stderr.write(f"Received message: {message}\n")
-            # Here you would typically process the message and send a response
-            # For this example, we'll just echo the message back
-            sys.stdout.write(f"Echoing received message: {message}]]>]]>")
-            sys.stdout.flush()
 
 if __name__ == "__main__":
     main()
