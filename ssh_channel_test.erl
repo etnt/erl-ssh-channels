@@ -38,7 +38,6 @@ create_and_use_channels(Connection) ->
 
         ok = send_hello_msg(Connection, Channel1),
         receive_data(Channel1),
-        timer:sleep(1),
         io:format("Closing Channel(~p)~n", [Channel1]),
         ok = ssh_connection:close(Connection, Channel1),
 
@@ -46,7 +45,6 @@ create_and_use_channels(Connection) ->
 
         ok = send_hello_msg(Connection, Channel2),
         receive_data(Channel2),
-        timer:sleep(3000),
         io:format("Closing Channel(~p)~n", [Channel2]),
         ok = ssh_connection:close(Connection, Channel2)
     catch
