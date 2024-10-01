@@ -38,6 +38,7 @@ create_and_use_channels(Connection) ->
 
         ok = send_hello_msg(Connection, Channel1),
         receive_data(Channel1),
+        ok = send_close_session_msg(Connection, Channel1),
         io:format("Closing Channel(~p)~n", [Channel1]),
         ok = ssh_connection:close(Connection, Channel1),
 
@@ -45,6 +46,7 @@ create_and_use_channels(Connection) ->
 
         ok = send_hello_msg(Connection, Channel2),
         receive_data(Channel2),
+        ok = send_close_session_msg(Connection, Channel2),
         io:format("Closing Channel(~p)~n", [Channel2]),
         ok = ssh_connection:close(Connection, Channel2)
     catch
@@ -84,10 +86,22 @@ create_netconf_channel(Connection) ->
     end.
 
 send_hello_msg(Connection, Channel) ->
-    HelloMessage =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hello xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\"><capabilities><capability>urn:ietf:params:netconf:base:1.1</capability></capabilities></hello>",
+    HelloMessage = hello_msg(),
     io:format("Sending Hello message on Channel(~p)~n", [Channel]),
     ok = ssh_connection:send(Connection, Channel, HelloMessage, infinity).
+
+send_close_session_msg(Connection, Channel) ->
+    CloseSessionMessage = close_session_msg(),
+    io:format("Sending CloseSession message on Channel(~p)~n", [Channel]),
+    ok = ssh_connection:send(
+        Connection, Channel, CloseSessionMessage, infinity
+    ).
+
+hello_msg() ->
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hello xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\"><capabilities><capability>urn:ietf:params:netconf:base:1.1</capability></capabilities></hello>".
+
+close_session_msg() ->
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?><close-session xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\"></close-session>".
 
 receive_data(Channel) ->
     receive
@@ -96,7 +110,9 @@ receive_data(Channel) ->
             TruncatedData = binary_to_list(
                 binary:part(Data, 0, min(80, byte_size(Data)))
             ),
-            io:format("Received data on Channel ~p: ~p~n", [Channel, TruncatedData]);
+            io:format("Received data on Channel ~p: ~p~n", [
+                Channel, TruncatedData
+            ]);
         {ssh_cm, _, {closed, Channel}} ->
             io:format("Channel ~p closed~n", [Channel])
     after 10000 ->
