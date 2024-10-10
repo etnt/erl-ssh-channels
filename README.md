@@ -3,9 +3,13 @@
 ## Setup
 
 1. Compile the Erlang client: `make`
-2. Copy the `netconf_server.py` script to (e.g) `/usr/local/bin`
-3. Add the following lines to `/etc/ssh/sshd_config`:
+2. Create a user: `admin` with password: `admin` (or change this in the code to match some other password)
+3. Copy the `netconf_server.py` script to (e.g) `/usr/local/bin`
+4. Add the following lines to `/etc/ssh/sshd_config`:
 ```
+# This will only allow admin logins from localhost
+AllowUsers admin@127.0.0.1
+
 Subsystem	netconf	/usr/local/bin/netconf_server.py
 ```
 4. Restart the SSH server: `sudo systemctl restart sshd` or `sudo service sshd restart`
